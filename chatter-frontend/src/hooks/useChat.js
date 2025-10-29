@@ -90,8 +90,11 @@ export const useChat = () => {
       webSocketFactory: () => new SockJS(SOCKJS_URL),
       connectHeaders: { Authorization: `Bearer ${token}` },
       onConnect: () => {
+        console.log("Connected to Websocket");
+
         client.subscribe("/topic/public-chat", onMessageReceived);
         client.subscribe("/user/queue/messages", onMessageReceived);
+        // client.subscribe("/user/queue/private", onMessageReceived);
         setIsConnected(true);
       },
       onStompError: (frame) => console.error("STOMP error:", frame),
@@ -140,6 +143,14 @@ export const useChat = () => {
     fetchOnlineUsers,
   ]);
 
+  useEffect(() => {
+    const client = stompClient;
+    return () => {
+      if (client?.connected) {
+        client.deactivate();
+      }
+    };
+  }, [stompClient]);
   const sendMessage = (messageInput, recipient) => {
     if (!stompClient || !messageInput.trim() || !user) return;
 
@@ -147,6 +158,7 @@ export const useChat = () => {
     const destination = isPublic
       ? "/app/chat.sendMessage"
       : "/app/chat.sendPrivateMessage";
+    console.log(destination);
 
     const messageBody = {
       sender: user.username,
