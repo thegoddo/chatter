@@ -24,7 +24,7 @@ public class AuthController {
         return ResponseEntity.ok("User registered successfully");
     }
 
-    @GetMapping("/login")
+    @PostMapping("/login")
     public ResponseEntity<String> login(@RequestBody LoginRequest loginRequest) {
         try {
             String jwt = authService.authenticateAndGenerateToken(loginRequest);
