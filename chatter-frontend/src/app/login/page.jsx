@@ -1,13 +1,14 @@
+"use client";
 const { useState, useEffect } = require("react");
 const { useAuth } = require("../context/AuthContext");
-const { useRouter } = require("next/router");
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 const LoginPage = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [IsSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { login, isAuthenticated } = useAuth();
   const router = useRouter();
@@ -18,7 +19,7 @@ const LoginPage = () => {
     }
   }, [isAuthenticated, router]);
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     setError("");
