@@ -151,7 +151,12 @@ export const useChat = () => {
       }
     };
   }, [stompClient]);
-  const sendMessage = (messageInput, recipient) => {
+  const sendMessage = (
+    messageInput,
+    recipient,
+    type = "CHAT",
+    mediaUrl = null
+  ) => {
     if (!stompClient || !messageInput.trim() || !user) return;
 
     const isPublic = recipient === "PUBLIC";
@@ -162,9 +167,10 @@ export const useChat = () => {
 
     const messageBody = {
       sender: user.username,
-      content: messageInput.trim(),
+      content: messageInput?.trim() || "",
       recipient: isPublic ? null : recipient,
-      type: isPublic ? "CHAT" : "PRIVATE",
+      type,
+      mediaUrl,
       timestamp: new Date().toISOString(),
     };
 
