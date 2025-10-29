@@ -14,6 +14,7 @@ public class ChatMessage {
     private String content;
     private String sender;
     private String recipient; // Added for private messages
+    private String mediaUrl;
     private LocalDateTime timestamp;
 
     public ChatMessage() {
