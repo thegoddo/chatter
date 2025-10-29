@@ -11,25 +11,61 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(() => localStorage.getItem("token"));
+
+  // Safely initialize token by checking for the browser environment (window)
+  const [token, setToken] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("token");
+    }
+    return null;
+  });
+
   const [isLoading, setIsLoading] = useState(true);
 
   const API_BASE_URL = "http://localhost:8080/api/auth";
 
+  // Define logout here so the useEffect can use it without adding it to dependencies
+  const logout = () => {
+    setUser(null);
+    setToken(null);
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("token");
+      localStorage.removeItem("username");
+    }
+    delete axios.defaults.headers.common["Authorization"];
+  };
+
+  // Effect to manage the global axios header and load initial user data
   useEffect(() => {
     if (token) {
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-    } else {
-      delete axios.defaults.headers.common["Authorization"];
-    }
-  }, [token]);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 0);
-    return () => clearTimeout(timer);
-  }, []);
+      const storedUsername = localStorage.getItem("username");
+
+      if (storedUsername) {
+        // If token and username exist, set the user object
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setUser({ username: storedUsername });
+      } else {
+        // If token exists but username is missing (bad state), force cleanup
+        console.warn(
+          "Token exists but username is missing from storage. Logging out."
+        );
+        logout();
+      }
+    } else {
+      // If no token, ensure environment is clean
+      delete axios.defaults.headers.common["Authorization"];
+      if (user) {
+        setUser(null);
+      }
+    }
+
+    // Auth status is ready once this effect runs on mount or token change
+    setIsLoading(false);
+    // FIX: Dependency array now relies only on 'token' to run on initial load and token changes.
+    // This prevents race conditions where the check might run before 'user' is fully set.
+  }, [token]);
 
   const login = async (username, password) => {
     try {
@@ -42,8 +78,13 @@ export const AuthProvider = ({ children }) => {
 
       setToken(jwtToken);
       setUser({ username });
-      localStorage.setItem("token", jwtToken);
-      localStorage.setItem("username", username);
+
+      if (typeof window !== "undefined") {
+        localStorage.setItem("token", jwtToken);
+        localStorage.setItem("username", username);
+      }
+
+      // Set the header immediately
       axios.defaults.headers.common["Authorization"] = `Bearer ${jwtToken}`;
 
       return true;
@@ -69,14 +110,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem("token");
-    localStorage.removeItem("username");
-    delete axios.defaults.headers.common["Authorization"];
-  };
-
   const value = {
     user,
     token,
@@ -89,6 +122,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={value}>
+      {/* Ensure children are only rendered once we've finished the initial loading check */}
       {!isLoading && children}
     </AuthContext.Provider>
   );
