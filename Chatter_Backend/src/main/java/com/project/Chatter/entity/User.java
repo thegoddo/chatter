@@ -1,10 +1,13 @@
 package com.project.Chatter.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
 
 @Entity
-@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter
+@Setter
 public class User {
 
     @Id
@@ -16,5 +19,6 @@ public class User {
     private String phoneNumber;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "status")
     private Status status;
 }

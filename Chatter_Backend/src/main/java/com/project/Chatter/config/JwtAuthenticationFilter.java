@@ -49,22 +49,31 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // 2. Extract JWT
         jwt = authHeader.substring(7);
 
-        // 3. Extract username from JWT
+        // 3. Extract username (which is email in JwtUtils) from JWT
         try {
-            username = jwtUtil.extractUsername(jwt);
+            username = jwtUtil.extractEmail(jwt);
+            System.out.println("DEBUG FILTER: Successfully extracted username from JWT: " + username);
         } catch (Exception e) {
-            // Log this exception (e.g., token expired or invalid signature)
-            System.err.println("JWT Extraction Error: " + e.getMessage());
+            // This catches initial token parsing issues
+            System.err.println("JWT Extraction FAILED (Token is invalid or expired at extractEmail call). Message: " + e.getMessage());
             filterChain.doFilter(request, response);
             return;
         }
 
-
         // 4. Validate user and set Security Context
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+
+            // This is the step you confirmed works.
             UserDetails userDetails = this.userService.loadUserByUsername(username);
 
-            if (jwtUtil.validateToken(jwt, userDetails)) {
+            // DEBUG: Print token and username just before validation call
+            System.out.println("DEBUG FILTER: Attempting final validation check.");
+            System.out.println("DEBUG FILTER: Username: " + username);
+            System.out.println("DEBUG FILTER: JWT (Partial): " + jwt.substring(0, Math.min(jwt.length(), 20)) + "...");
+
+            // Token is validated again, and if valid, the SecurityContext is set.
+            if (jwtUtil.validateToken(jwt, username)) {
+
                 // Token is valid; create authentication object
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails,
@@ -75,8 +84,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 authToken.setDetails(
                         new WebAuthenticationDetailsSource().buildDetails(request)
                 );
-                // Set the security context
+                // Set the security context, granting the request access
                 SecurityContextHolder.getContext().setAuthentication(authToken);
+                System.out.println("DEBUG FILTER: Security Context set successfully.");
+            } else {
+                System.out.println("DEBUG FILTER: Token INVALIDATED by jwtUtil.validateToken().");
             }
         }
 

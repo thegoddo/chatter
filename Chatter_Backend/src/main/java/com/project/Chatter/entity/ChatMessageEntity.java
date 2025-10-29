@@ -19,7 +19,8 @@ public class ChatMessageEntity {
     private Long id;
 
     @Enumerated(EnumType.STRING)
-    private ChatMessage.MessageType type;
+    @Column(name = "type")
+    private MessageType type;
 
     @Column(columnDefinition = "TEXT")
     private String content;

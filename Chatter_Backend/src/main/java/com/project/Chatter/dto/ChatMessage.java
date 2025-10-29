@@ -1,23 +1,22 @@
 package com.project.Chatter.dto;
 
+import com.project.Chatter.entity.MessageType;
 import lombok.Data;
-import lombok.ToString;
-
 import java.time.LocalDateTime;
 
+/**
+ * Data Transfer Object (DTO) for chat messages, used for WebSocket and REST communication.
+ */
 @Data
-@ToString
 public class ChatMessage {
-
-    public enum MessageType {
-        CHAT, // A standard user message
-        JOIN, // Notification of a user joining the chat
-        LEAVE // Notification of a user leaving the chat
-    }
 
     private MessageType type;
     private String content;
     private String sender;
-    private String recipient;
+    private String recipient; // Added for private messages
     private LocalDateTime timestamp;
+
+    public ChatMessage() {
+        this.timestamp = LocalDateTime.now();
+    }
 }

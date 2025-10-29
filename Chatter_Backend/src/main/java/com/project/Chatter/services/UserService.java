@@ -43,6 +43,7 @@ public class UserService implements UserDetailsService {
         // 2. Map the application's User entity to Spring Security's UserDetails object.
         // We grant a default 'ROLE_USER' authority for basic authentication purposes.
         List<SimpleGrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
+        System.out.println("Loaded user: " + applicationUser.getUsername() + " with authorities: " + authorities);
 
         return new org.springframework.security.core.userdetails.User(
                 applicationUser.getUsername(),
