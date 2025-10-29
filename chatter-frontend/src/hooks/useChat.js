@@ -33,7 +33,6 @@ export const useChat = () => {
 
   const fetchPrivateHistory = useCallback(
     async (recipient) => {
-      if (privateMessages[recipient]) return;
       try {
         const res = await axios.get(
           `${API_BASE_URL}/messages/history/private/${user?.username}/${recipient}`,
@@ -49,7 +48,7 @@ export const useChat = () => {
         console.error("Private history fetch failed:", err);
       }
     },
-    [token, user, privateMessages]
+    [token, user]
   );
 
   const fetchOnlineUsers = useCallback(async () => {
@@ -74,10 +73,13 @@ export const useChat = () => {
       } else if (msg.type === "PRIVATE") {
         const otherUser =
           msg.sender === user?.username ? msg.recipient : msg.sender;
-        setPrivateMessages((prev) => ({
-          ...prev,
-          [otherUser]: [...(prev[otherUser] || []), msg],
-        }));
+        setPrivateMessages((prev) => {
+          const updated = {
+            ...prev,
+            [otherUser]: [...(prev[otherUser] || []), msg],
+          };
+          return updated;
+        });
       }
     },
     [user, fetchOnlineUsers]
@@ -118,7 +120,7 @@ export const useChat = () => {
   }, [user, token, onMessageReceived]);
 
   useEffect(() => {
-    if (stompClient && isConnected && user?.username) {
+    if (stompClient && connected && user?.username) {
       stompClient.publish({
         destination: "/app/chat.addUser",
         headers: { Authorization: `Bearer ${token}` },
@@ -176,12 +178,17 @@ export const useChat = () => {
   const handleSetActiveConversation = useCallback(
     (recipient) => {
       setActiveConversation(recipient);
-      if (recipient !== "PUBLIC" && !privateMessages[recipient]) {
+      if (recipient !== "PUBLIC") {
         fetchPrivateHistory(recipient);
       }
     },
-    [fetchPrivateHistory, privateMessages]
+    [fetchPrivateHistory]
   );
+
+  const currentMessages =
+    activeConversation === "PUBLIC"
+      ? publicMessages
+      : privateMessages[activeConversation] || [];
 
   return {
     isConnected,
@@ -192,9 +199,6 @@ export const useChat = () => {
     publicMessages,
     privateMessages,
     sendMessage,
-    currentMessages:
-      activeConversation === "PUBLIC"
-        ? publicMessages
-        : privateMessages[activeConversation] || [],
+    currentMessages,
   };
 };
